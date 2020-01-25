@@ -24,6 +24,8 @@ GOLINT      = golint
 
 SOURCES     = $(shell find . -name \*.go -print)
 
+TEST_DATA   = $(shell find . -path '*/testdata/*' -type f -print)
+
 _mainPkgRE  = ^\s*package\s\s*main\s*\(\#.*\)*$$
 _mainFuncRE = ^\s*func\s\s*main(.*$$
 BINSRC      = $(shell echo "$(SOURCES)" | xargs grep -H '$(_mainPkgRE)' | awk -F: '{print $$1}' | sort -u | xargs grep -H '$(_mainFuncRE)' | awk -F: '{print $$1}' | sort -u)
@@ -77,7 +79,7 @@ test: $(FORMAT_TARG) lint vet test-only
 
 cover: $(COVER_HTML)
 
-$(COVER_OUT): $(SOURCES)
+$(COVER_OUT): $(SOURCES) $(TEST_DATA)
 	$(MAKE) test
 
 $(COVER_HTML): $(COVER_OUT)
@@ -85,6 +87,8 @@ $(COVER_HTML): $(COVER_OUT)
 
 clean:
 	rm -f $(CLEAN)
+
+$(BINS): $(SOURCES)
 
 %: %.go
 	$(GO) build -o $@ $<
