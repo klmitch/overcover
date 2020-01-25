@@ -1,0 +1,14 @@
+mode: atomic
+github.com/klmitch/overcover/coverage/coverage.go:34.58,37.16 2 4
+github.com/klmitch/overcover/coverage/coverage.go:42.2,42.57 1 3
+github.com/klmitch/overcover/coverage/coverage.go:72.2,72.8 1 1
+github.com/klmitch/overcover/coverage/coverage.go:37.16,39.3 1 1
+github.com/klmitch/overcover/coverage/coverage.go:42.57,44.77 1 bad
+github.com/klmitch/overcover/coverage/coverage.go:51.3,54.17 4 13
+github.com/klmitch/overcover/coverage/coverage.go:57.3,58.17 2 12
+github.com/klmitch/overcover/coverage/coverage.go:64.3,65.16 2 11
+github.com/klmitch/overcover/coverage/coverage.go:44.77,45.12 1 4
+github.com/klmitch/overcover/coverage/coverage.go:54.17,56.4 1 1
+github.com/klmitch/overcover/coverage/coverage.go:58.17,60.4 1 1
+github.com/klmitch/overcover/coverage/coverage.go:65.16,67.4 1 4
+github.com/klmitch/overcover/coverage/coverage.go:67.9,69.4 1 7
