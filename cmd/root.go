@@ -20,21 +20,26 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/klmitch/overcover/coverage"
 )
 
 // Variables used to store the values of flags.
 var (
-	threshold    float64
-	coverprofile string
+	config string
 )
 
 // Variables used for mocking for the tests.
 var (
-	stdout io.Writer = os.Stdout
-	stderr io.Writer = os.Stderr
-	exit   func(int) = os.Exit
+	stdout         io.Writer            = os.Stdout
+	stderr         io.Writer            = os.Stderr
+	exit           func(int)            = os.Exit
+	getString      func(string) string  = viper.GetString
+	getFloat64     func(string) float64 = viper.GetFloat64
+	setConfigFile  func(string)         = viper.SetConfigFile
+	readInConfig   func() error         = viper.ReadInConfig
+	configFileUsed func() string        = viper.ConfigFileUsed
 )
 
 // rootCmd describes the overcover command to cobra.
@@ -45,6 +50,12 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// Load the coverage; this reads the coverage profile
 		// and sums the statement counts
+		coverprofile := getString("coverprofile")
+		if coverprofile == "" {
+			fmt.Fprintf(stderr, "No coverage profile file specified!  Use -p or provide a configuration file.\n")
+			cmd.Usage()
+			exit(2)
+		}
 		file, err := os.Open(coverprofile)
 		if err != nil {
 			fmt.Fprintf(stderr, "Unable to open coverage profile file: %s\n", err)
@@ -62,6 +73,7 @@ var rootCmd = &cobra.Command{
 		fmt.Fprintf(stdout, "%d statements out of %d covered; overall coverage: %.1f%%\n", cov.Executed, cov.Total, coverage)
 
 		// Verify that we met the threshold
+		threshold := getFloat64("threshold")
 		if threshold > 0.0 && coverage < threshold {
 			fmt.Fprintf(stderr, "\nFailed to meet coverage threshold of %.1f%%\n", threshold)
 			exit(1)
@@ -80,6 +92,34 @@ func Execute() {
 
 // init initializes the flags for overcover.
 func init() {
-	rootCmd.Flags().Float64Var(&threshold, "threshold", 0, "Set the minimum threshold for coverage; coverage below this threshold will result in an error.")
-	rootCmd.Flags().StringVar(&coverprofile, "coverprofile", "coverage.out", "Specify the coverage profile file to read.")
+	// Initialize cobra and viper
+	cobra.OnInitialize(readConfig)
+	viper.SetEnvPrefix("overcover")
+
+	// Set up the flags
+	rootCmd.Flags().StringVarP(&config, "config", "c", os.Getenv("OVERCOVER_CONFIG"), "Configuration file to read.  All command line options may be set through the configuration file.")
+	rootCmd.Flags().Float64P("threshold", "t", 0, "Set the minimum threshold for coverage; coverage below this threshold will result in an error.")
+	rootCmd.Flags().StringP("coverprofile", "p", "", "Specify the coverage profile file to read.")
+
+	// Bind them to viper
+	viper.BindPFlag("threshold", rootCmd.Flags().Lookup("threshold"))
+	viper.BindEnv("threshold")
+	viper.BindPFlag("coverprofile", rootCmd.Flags().Lookup("coverprofile"))
+	viper.BindEnv("coverprofile")
+}
+
+// readConfig reads the configuration file using Viper.
+func readConfig() {
+	// Is a configuration file set?
+	if config == "" {
+		return
+	}
+
+	// Select it
+	setConfigFile(config)
+
+	// Read the configuration
+	if err := readInConfig(); err == nil {
+		fmt.Fprintf(stdout, "Using configuration file %s\n", configFileUsed())
+	}
 }
