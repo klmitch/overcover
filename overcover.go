@@ -15,12 +15,11 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"strconv"
+
+	"github.com/klmitch/overcover/coverage"
 )
 
 var (
@@ -38,56 +37,25 @@ func main() {
 
 	// Load the coverage; this reads the coverage profile and sums the
 	// statement counts
-	exec, unexec, err := loadCoverage(coverprofile)
+	file, err := os.Open(coverprofile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to open coverage profile file: %s\n", err)
+		os.Exit(2)
+	}
+	defer file.Close()
+	cov, err := coverage.LoadCoverage(file)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to read coverage profile file: %s\n", err)
 		os.Exit(2)
 	}
 
 	// Compute the overall coverage
-	coverage := float64(exec) / float64(exec+unexec) * 100.0
-	fmt.Printf("%d statements out of %d covered; overall coverage: %.1f%%\n", exec, exec+unexec, coverage)
+	coverage := float64(cov.Executed) / float64(cov.Total) * 100.0
+	fmt.Printf("%d statements out of %d covered; overall coverage: %.1f%%\n", cov.Executed, cov.Total, coverage)
 
 	// Verify that we met the threshold
 	if threshold > 0.0 && coverage < threshold {
 		fmt.Fprintf(os.Stderr, "\nFailed to meet coverage threshold of %.1f%%\n", threshold)
 		os.Exit(1)
 	}
-}
-
-func loadCoverage(filename string) (exec int64, unexec int64, err error) {
-	// Read the coverage file
-	data, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return
-	}
-
-	// Split it up
-	exec = 0
-	unexec = 0
-	for lno, line := range bytes.Split(data, []byte{'\n'}) {
-		if len(line) == 0 || (lno == 0 && bytes.HasPrefix(line, []byte("mode:"))) {
-			continue
-		}
-
-		// Parse out the last two fields
-		var stmts, runs int
-		fields := bytes.Split(line, []byte{' '})
-		stmts, err = strconv.Atoi(string(fields[len(fields)-2]))
-		if err != nil {
-			return
-		}
-		runs, err = strconv.Atoi(string(fields[len(fields)-1]))
-		if err != nil {
-			return
-		}
-
-		if runs == 0 {
-			unexec += int64(stmts)
-		} else {
-			exec += int64(stmts)
-		}
-	}
-
-	return
 }
