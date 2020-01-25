@@ -17,6 +17,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"math"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -27,19 +28,22 @@ import (
 
 // Variables used to store the values of flags.
 var (
-	config string
+	config   string
+	readOnly bool
 )
 
 // Variables used for mocking for the tests.
 var (
-	stdout         io.Writer            = os.Stdout
-	stderr         io.Writer            = os.Stderr
-	exit           func(int)            = os.Exit
-	getString      func(string) string  = viper.GetString
-	getFloat64     func(string) float64 = viper.GetFloat64
-	setConfigFile  func(string)         = viper.SetConfigFile
-	readInConfig   func() error         = viper.ReadInConfig
-	configFileUsed func() string        = viper.ConfigFileUsed
+	stdout         io.Writer                 = os.Stdout
+	stderr         io.Writer                 = os.Stderr
+	exit           func(int)                 = os.Exit
+	getString      func(string) string       = viper.GetString
+	getFloat64     func(string) float64      = viper.GetFloat64
+	setConfigFile  func(string)              = viper.SetConfigFile
+	readInConfig   func() error              = viper.ReadInConfig
+	configFileUsed func() string             = viper.ConfigFileUsed
+	setConfig      func(string, interface{}) = viper.Set
+	writeConfig    func(string) error        = viper.WriteConfigAs
 )
 
 // rootCmd describes the overcover command to cobra.
@@ -78,6 +82,28 @@ var rootCmd = &cobra.Command{
 			fmt.Fprintf(stderr, "\nFailed to meet coverage threshold of %.1f%%\n", threshold)
 			exit(1)
 		}
+
+		// OK, now let's see if the threshold needs updating
+		minHeadroom := getFloat64("min_headroom")
+		maxHeadroom := getFloat64("max_headroom")
+		if config != "" && minHeadroom >= 0.0 && maxHeadroom > minHeadroom && coverage > threshold+maxHeadroom {
+			// Compute new threshold
+			newThreshold := math.Round(coverage*10.0)/10.0 - minHeadroom
+
+			// If we're read-only, generate an error
+			if readOnly {
+				fmt.Fprintf(stderr, "\nCoverage exceeds maximum headroom.  Update threshold to %.1f%%\n", newThreshold)
+				exit(5)
+			}
+
+			// OK, update the configuration
+			fmt.Fprintf(stdout, "Updating configuration file %s with new threshold value %.1f%%\n", config, newThreshold)
+			setConfig("threshold", newThreshold)
+			if err := writeConfig(config); err != nil {
+				fmt.Fprintf(stderr, "\nFailed to write updated config with new threshold %.1f%% to %s: %s\n", newThreshold, config, err)
+				exit(5)
+			}
+		}
 	},
 }
 
@@ -98,14 +124,22 @@ func init() {
 
 	// Set up the flags
 	rootCmd.Flags().StringVarP(&config, "config", "c", os.Getenv("OVERCOVER_CONFIG"), "Configuration file to read.  All command line options may be set through the configuration file.")
+	_, readOnlyDefault := os.LookupEnv("OVERCOVER_READONLY")
+	rootCmd.Flags().BoolVarP(&readOnly, "readonly", "r", readOnlyDefault, "Used to indicate that the configuration file should only be read, not written.")
 	rootCmd.Flags().Float64P("threshold", "t", 0, "Set the minimum threshold for coverage; coverage below this threshold will result in an error.")
 	rootCmd.Flags().StringP("coverprofile", "p", "", "Specify the coverage profile file to read.")
+	rootCmd.Flags().Float64P("min-headroom", "m", 0, "Set the minimum headroom.  If the threshold is raised, it will be raised to the current coverage minus this value.")
+	rootCmd.Flags().Float64P("max-headroom", "M", 0, "Set the maximum headroom.  If the coverage is more than the threshold plus this value, the threshold will be raised.")
 
 	// Bind them to viper
 	viper.BindPFlag("threshold", rootCmd.Flags().Lookup("threshold"))
 	viper.BindEnv("threshold")
 	viper.BindPFlag("coverprofile", rootCmd.Flags().Lookup("coverprofile"))
 	viper.BindEnv("coverprofile")
+	viper.BindPFlag("min_headroom", rootCmd.Flags().Lookup("min-headroom"))
+	viper.BindEnv("min_headroom")
+	viper.BindPFlag("max_headroom", rootCmd.Flags().Lookup("max-headroom"))
+	viper.BindEnv("max_headroom")
 }
 
 // readConfig reads the configuration file using Viper.
