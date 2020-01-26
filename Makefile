@@ -21,6 +21,9 @@ GO          = go
 GOFMT       = gofmt
 GOIMPORTS   = goimports
 GOLINT      = golint
+OVERCOVER   = ./overcover
+
+COV_CONF    = .overcover.yaml
 
 SOURCES     = $(shell find . -name \*.go -print)
 
@@ -39,9 +42,11 @@ CLEAN       = $(BINS) $(COVER_OUT) $(COVER_HTML)
 ifeq ($(CI),true)
 FORMAT_TARG = format-test
 MOD_ARG     = -mod=readonly
+COV_ARG     = --readonly
 else
 FORMAT_TARG = format
 MOD_ARG     =
+COV_ARG     =
 endif
 
 all: test build
@@ -76,6 +81,9 @@ test-only:
 	$(GO) test $(MOD_ARG) -race -coverprofile=$(COVER_OUT) $(PACKAGES)
 
 test: $(FORMAT_TARG) lint vet test-only
+
+cover-test: $(COVER_OUT) $(OVERCOVER)
+	$(OVERCOVER) --config $(COV_CONF) $(COV_ARG) --coverprofile $(COVER_OUT)
 
 cover: $(COVER_HTML)
 
