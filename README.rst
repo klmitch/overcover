@@ -46,6 +46,29 @@ variables named after the long option names--e.g.,
 ``OVERCOVER_COVERPROFILE`` specifies a value for ``--coverprofile``,
 and ``OVERCOVER_THRESHOLD`` specifies a value for ``--threshold``.
 
+The ``go test`` command does not include packages that do not contain
+any test files in the output coverage profile.  To ensure that all
+code is counted in the coverage determination, Overcover can be
+provided the package specification in the same format taken by ``go
+test``; it will count the number of statements and include that data
+in its calculation.  For example::
+
+    % overcover --coverprofile coverage.out ./...
+
+Build arguments may be provided to influence the selection of source
+packages; these are standard build arguments to the ``go`` tools, and
+are specified with a ``--build-arg`` prefix; the corresponding
+environment variable, ``OVERCOVER_BUILD_ARG``, should contain a
+space-separated sequence of build arguments.
+
+Finally, summary information on the coverage per package can be
+emitted using ``--summary`` (``OVERCOVER_SUMMARY``), and detailed
+per-file information can be emitted using ``--detailed``
+(``OVERCOVER_DETAILED``); these two options may be used together, in
+which case the package data will be emitted prior to the file data.
+The output is sorted first to place the lowest coverage at the top,
+then it is sorted lexically by package or file name.
+
 Configuration File
 ==================
 
@@ -139,6 +162,12 @@ Options/Configuration Table
 |               | OVERCOVER_CONFIG       | --config (-c)       | *None*     | Specifies the name of the configuration file to use.                     |
 +---------------+------------------------+---------------------+------------+--------------------------------------------------------------------------+
 |               | OVERCOVER_READONLY     | --readonly (-r)     |            | Specifies that the configuration file should not be updated.             |
++---------------+------------------------+---------------------+------------+--------------------------------------------------------------------------+
+|               | OVERCOVER_BUILD_ARG    | --build-arg (-b)    | *None*     | Specifies a build argument for package selection.                        |
++---------------+------------------------+---------------------+------------+--------------------------------------------------------------------------+
+|               | OVERCOVER_SUMMARY      | --summary (-s)      |            | Specifies that per-package summary information should be emitted.        |
++---------------+------------------------+---------------------+------------+--------------------------------------------------------------------------+
+|               | OVERCOVER_DETAILED     | --detailed (-d)     |            | Specifies that per-file coverage information should be emitted.          |
 +---------------+------------------------+---------------------+------------+--------------------------------------------------------------------------+
 |               |                        | --help (-h)         |            | Emits help text describing how to use Overcover.                         |
 +---------------+------------------------+---------------------+------------+--------------------------------------------------------------------------+

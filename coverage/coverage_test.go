@@ -15,67 +15,74 @@
 package coverage
 
 import (
-	"bytes"
 	"testing"
 
+	"github.com/klmitch/patcher"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/tools/cover"
+
+	"github.com/klmitch/overcover/common"
 )
 
-func TestLoadCoverageBase(t *testing.T) {
-	r := bytes.NewBufferString(`mode: atomic
-file1.go:1.1,3.3 3 5
-file1.go:4.4,5.5 1 0
-file1.go:6.6,7.7 1 1
-file2.go:1.1,3.3 3 0
-file2.go:4.4,5.5 1 15
-`)
+func TestLoadBase(t *testing.T) {
+	profs := []*cover.Profile{
+		{
+			FileName: "example.com/some/package/file1.go",
+			Blocks: []cover.ProfileBlock{
+				{NumStmt: 5, Count: 0},
+				{NumStmt: 10, Count: 1},
+				{NumStmt: 4, Count: 0},
+				{NumStmt: 1, Count: 1},
+			},
+		},
+		{
+			FileName: "example.com/some/package/file2.go",
+			Blocks: []cover.ProfileBlock{
+				{NumStmt: 10, Count: 0},
+				{NumStmt: 5, Count: 1},
+				{NumStmt: 1, Count: 0},
+				{NumStmt: 4, Count: 1},
+			},
+		},
+	}
+	parseProfilesCalled := false
+	defer patcher.SetVar(&parseProfiles, func(profile string) ([]*cover.Profile, error) {
+		assert.Equal(t, "coverage.out", profile)
+		parseProfilesCalled = true
+		return profs, nil
+	}).Install().Restore()
 
-	result, err := LoadCoverage(r)
+	result, err := Load("coverage.out")
 
 	assert.NoError(t, err)
-	assert.Equal(t, int64(9), result.Total)
-	assert.Equal(t, int64(5), result.Executed)
-	assert.Equal(t, int64(4), result.Unexecuted)
+	assert.Equal(t, common.DataSet{
+		common.FileData{
+			Package: "example.com/some/package",
+			Name:    "file1.go",
+			Count:   20,
+			Exec:    11,
+		},
+		common.FileData{
+			Package: "example.com/some/package",
+			Name:    "file2.go",
+			Count:   20,
+			Exec:    9,
+		},
+	}, result)
+	assert.True(t, parseProfilesCalled)
 }
 
-type FailingReader struct{}
+func TestLoadError(t *testing.T) {
+	parseProfilesCalled := false
+	defer patcher.SetVar(&parseProfiles, func(profile string) ([]*cover.Profile, error) {
+		assert.Equal(t, "coverage.out", profile)
+		parseProfilesCalled = true
+		return nil, assert.AnError
+	}).Install().Restore()
 
-func (r *FailingReader) Read(p []byte) (int, error) {
-	return 0, assert.AnError
-}
+	result, err := Load("coverage.out")
 
-func TestLoadCoverageReadAllFails(t *testing.T) {
-	r := &FailingReader{}
-
-	_, err := LoadCoverage(r)
-
-	assert.Equal(t, assert.AnError, err)
-}
-
-func TestLoadCoverageStatementsFails(t *testing.T) {
-	r := bytes.NewBufferString(`mode: atomic
-file1.go:1.1,3.3 3 5
-file1.go:4.4,5.5 1 0
-file1.go:6.6,7.7 1 1
-file2.go:1.1,3.3 bad 0
-file2.go:4.4,5.5 1 15
-`)
-
-	_, err := LoadCoverage(r)
-
-	assert.NotNil(t, err)
-}
-
-func TestLoadCoverageRunsFails(t *testing.T) {
-	r := bytes.NewBufferString(`mode: atomic
-file1.go:1.1,3.3 3 5
-file1.go:4.4,5.5 1 0
-file1.go:6.6,7.7 1 1
-file2.go:1.1,3.3 3 bad
-file2.go:4.4,5.5 1 15
-`)
-
-	_, err := LoadCoverage(r)
-
-	assert.NotNil(t, err)
+	assert.Same(t, assert.AnError, err)
+	assert.Nil(t, result)
+	assert.True(t, parseProfilesCalled)
 }

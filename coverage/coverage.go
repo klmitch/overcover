@@ -15,59 +15,49 @@
 package coverage
 
 import (
-	"bytes"
-	"io"
-	"io/ioutil"
-	"strconv"
+	"path"
+
+	"golang.org/x/tools/cover"
+
+	"github.com/klmitch/overcover/common"
 )
 
-// Coverage contains the overall coverage as determined by reading a
-// coverage profile file.
-type Coverage struct {
-	Total      int64
-	Executed   int64
-	Unexecuted int64
-}
+// Patch points for top-level functions called by functions in this
+// file.
+var (
+	parseProfiles func(string) ([]*cover.Profile, error) = cover.ParseProfiles
+)
 
-// LoadCoverage reads a stream containing coverage profile data and
-// constructs a Coverage from it.
-func LoadCoverage(r io.Reader) (cov Coverage, err error) {
-	// Begin by reading the data
-	data, err := ioutil.ReadAll(r)
+// Load loads a coverage profile file and returns a list of FileData
+// instances.
+func Load(profile string) (common.DataSet, error) {
+	// Begin by loading the profile file
+	profs, err := parseProfiles(profile)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	// Interpret the data
-	for lno, line := range bytes.Split(data, []byte{'\n'}) {
-		// Skip empty lines and the mode directive
-		if len(line) == 0 || (lno == 0 && bytes.HasPrefix(line, []byte("mode:"))) {
-			continue
+	// Next, process each profile
+	var data []common.FileData
+	for _, prof := range profs {
+		fd := common.FileData{
+			Package: path.Dir(prof.FileName),
+			Name:    path.Base(prof.FileName),
 		}
 
-		// We're only really interested in the last two
-		// fields: the number of statements and the execution
-		// count (where we're only wanting to know if it's 0)
-		var stmts, runs int
-		fields := bytes.Split(line, []byte{' '})
-		stmts, err = strconv.Atoi(string(fields[len(fields)-2]))
-		if err != nil {
-			return
-		}
-		runs, err = strconv.Atoi(string(fields[len(fields)-1]))
-		if err != nil {
-			return
+		// Process each block
+		for _, blk := range prof.Blocks {
+			fd.Count += int64(blk.NumStmt)
+
+			// Has it been executed?
+			if blk.Count > 0 {
+				fd.Exec += int64(blk.NumStmt)
+			}
 		}
 
-		// OK, categorize it as run or unrun and update the
-		// coverage data
-		cov.Total += int64(stmts)
-		if runs == 0 {
-			cov.Unexecuted += int64(stmts)
-		} else {
-			cov.Executed += int64(stmts)
-		}
+		// Append it to our results
+		data = append(data, fd)
 	}
 
-	return
+	return data, nil
 }
