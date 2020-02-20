@@ -14,14 +14,20 @@
 
 package main
 
-import "github.com/klmitch/overcover/cmd"
+import (
+	"testing"
 
-// Variables used for mocking for the tests.
-var (
-	execute func() = cmd.Execute
+	"github.com/klmitch/patcher"
+	"github.com/stretchr/testify/assert"
 )
 
-// main is the function called when the executable is invoked.
-func main() {
-	execute()
+func TestMain(t *testing.T) {
+	executeCalled := false
+	defer patcher.SetVar(&execute, func() {
+		executeCalled = true
+	}).Install().Restore()
+
+	main()
+
+	assert.True(t, executeCalled)
 }
