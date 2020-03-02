@@ -14,6 +14,3 @@
 
 # Override the OVERCOVER value to use the local OVERCOVER
 OVERCOVER = ./overcover
-
-# Ensure that cover-test depends on OVERCOVER
-cover-test: $(OVERCOVER)
