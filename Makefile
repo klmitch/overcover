@@ -22,12 +22,21 @@ IGNORE      = .gitignore
 PKG_ROOT    = $(shell grep '^module ' go.mod | awk '{print $$NF}')
 PKG_NAME    = $(notdir $(PKG_ROOT))
 
+# Tool-related definitions
+TOOLDIR     = tools
+TOOLS       =
+
 # Names of the various commands
 GO          = go
 GOFMT       = gofmt
-GOIMPORTS   = goimports
-GOLINT      = golint
-OVERCOVER   = overcover
+GOIMPORTS   = ./$(TOOLDIR)/goimports
+TOOLS       += golang.org/x/tools/cmd/goimports
+GOLINT      = ./$(TOOLDIR)/golint
+TOOLS       += golang.org/x/lint/golint
+OVERCOVER   = ./$(TOOLDIR)/overcover
+TOOLS       += github.com/klmitch/overcover
+GOVERALLS   = ./$(TOOLDIR)/goveralls
+TOOLS       += github.com/mattn/goveralls
 
 # Coverage configuration file
 COV_CONF    = .overcover.yaml
@@ -79,6 +88,13 @@ endif
 # Set up dependencies for the "test" and "cover" targets
 TEST_TARG   = $(FORMAT_TARG) lint vet test-only
 
+include $(wildcard scripts/*.mk)
+
+# Add TOOLDIR to CLEAN unless told not to
+ifneq ($(KEEP_TOOLDIR),true)
+CLEAN       += $(TOOLDIR)
+endif
+
 all: $(ALL_TARG) ## Run tests and build binaries (if any)
 
 build: $(BINS) ## Build binaries (if any)
@@ -86,7 +102,7 @@ build: $(BINS) ## Build binaries (if any)
 tidy: ## Ensure go.mod matches the source code
 	$(GO) mod tidy
 
-format-test: ## Check that source files are properly formatted
+format-test: $(GOIMPORTS) ## Check that source files are properly formatted
 	@all=`( \
 		$(GOIMPORTS) -l -local $(PKG_ROOT) $(SOURCES); \
 		$(GOFMT) -l -s $(SOURCES) \
@@ -100,11 +116,11 @@ format-test: ## Check that source files are properly formatted
 		exit 1; \
 	fi
 
-format: ## Format source files properly
+format: $(GOIMPORTS) ## Format source files properly
 	$(GOIMPORTS) -l -local $(PKG_ROOT) -w $(SOURCES)
 	$(GOFMT) -l -s -w $(SOURCES)
 
-lint: ## Lint-check source files
+lint: $(GOLINT) ## Lint-check source files
 	$(GOLINT) -set_exit_status $(PACKAGES)
 
 vet: ## Vet source files
@@ -117,8 +133,13 @@ test: $(TEST_TARG) cover-test ## Run all tests
 
 cover: $(TEST_TARG) $(COVER_HTML) cover-test ## Run tests and generate a coverage report
 
-cover-test: $(COVER_OUT) ## Test that coverage meets minimum configured threshold
+cover-test: $(COVER_OUT) $(OVERCOVER) ## Test that coverage meets minimum configured threshold
 	$(OVERCOVER) --config $(COV_CONF) $(COV_ARG) --coverprofile $(COVER_OUT) $(COVER_ARGS) $(PACKAGES)
+
+# Travis-specific target for submitting coverage to coveralls.io;
+# explicitly undocumented
+goveralls: $(COVER_OUT) $(GOVERALLS)
+	$(GOVERALLS) -coverprofile=$(COVER_OUT) -service=travis-ci
 
 $(COVER_OUT): $(SOURCES) $(TEST_DATA)
 	$(MAKE) test-only
@@ -127,7 +148,7 @@ $(COVER_HTML): $(COVER_OUT)
 	$(GO) tool cover -html=$(COVER_OUT) -o $(COVER_HTML)
 
 clean: ## Clean up intermediate files
-	rm -f $(CLEAN)
+	rm -rf $(CLEAN)
 
 # Sets up build targets for each binary
 ifneq ($(BINS),)
@@ -141,7 +162,20 @@ endef
 $(foreach bin,$(BINSRC),$(eval $(call BIN_template,$(bin))))
 endif
 
-$(IGNORE).tmp:
+# Sets up the tools directory
+$(TOOLDIR):
+	mkdir $(TOOLDIR)
+	cd $(TOOLDIR) && go mod init $(PKG_ROOT)/$(notdir $(TOOLDIR))
+
+# Sets up build targets for each required tool
+define TOOL_template =
+./$(TOOLDIR)/$$(notdir $(1)): $(TOOLDIR)
+	cd $(TOOLDIR) && GOBIN=$(abspath $(TOOLDIR)) go install $(1)
+endef
+
+$(foreach tool,$(TOOLS),$(eval $(call TOOL_template,$(tool))))
+
+$(IGNORE).tmp: $(MAKEFILE_LIST)
 	echo $(CLEAN) | sed 's/ /\n/g' > $(IGNORE).tmp
 
 $(IGNORE): $(IGNORE).tmp
@@ -161,10 +195,8 @@ ifeq ($(CI),true)
 		exit 1; \
 	fi
 else
-	mv $(IGNORE).tmp $(IGNORE)
+	cp $(IGNORE).tmp $(IGNORE)
 endif
-
-include $(wildcard scripts/*.mk)
 
 help: ## Emit help for the Makefile
 	@echo "Available make targets:"
@@ -187,4 +219,4 @@ help: ## Emit help for the Makefile
 			} \
 		}'
 
-.PHONY: all build tidy format-test format lint vet test-only test cover-test cover clean help
+.PHONY: all build tidy format-test format lint vet test-only test cover cover-test goveralls clean help
