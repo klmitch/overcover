@@ -33,11 +33,12 @@ import (
 
 // Variables used to store the values of flags.
 var (
-	config    string
-	readOnly  bool
-	buildArgs = []string{}
-	detailed  bool
-	summary   bool
+	config       string
+	readOnly     bool
+	coverprofile string
+	buildArgs    = []string{}
+	detailed     bool
+	summary      bool
 )
 
 // Variables used for mocking for the tests.
@@ -45,7 +46,6 @@ var (
 	stdout         io.Writer                                        = os.Stdout
 	stderr         io.Writer                                        = os.Stderr
 	exit           func(int)                                        = os.Exit
-	getString      func(string) string                              = viper.GetString
 	getFloat64     func(string) float64                             = viper.GetFloat64
 	setConfigFile  func(string)                                     = viper.SetConfigFile
 	readInConfig   func() error                                     = viper.ReadInConfig
@@ -64,7 +64,6 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// Load the coverage; this reads the coverage profile
 		// and sums the statement counts
-		coverprofile := getString("coverprofile")
 		if coverprofile == "" && len(args) == 0 {
 			fmt.Fprintf(stderr, "No coverage profile file specified!  Use -p or provide a configuration file.\n")
 			cmd.Usage()
@@ -193,7 +192,7 @@ func init() {
 	_, readOnlyDefault := os.LookupEnv("OVERCOVER_READONLY")
 	rootCmd.Flags().BoolVarP(&readOnly, "readonly", "r", readOnlyDefault, "Used to indicate that the configuration file should only be read, not written.")
 	rootCmd.Flags().Float64P("threshold", "t", 0, "Set the minimum threshold for coverage; coverage below this threshold will result in an error.")
-	rootCmd.Flags().StringP("coverprofile", "p", "", "Specify the coverage profile file to read.")
+	rootCmd.Flags().StringVarP(&coverprofile, "coverprofile", "p", os.Getenv("OVERCOVER_COVERPROFILE"), "Specify the coverage profile file to read.")
 	rootCmd.Flags().Float64P("min-headroom", "m", 0, "Set the minimum headroom.  If the threshold is raised, it will be raised to the current coverage minus this value.")
 	rootCmd.Flags().Float64P("max-headroom", "M", 0, "Set the maximum headroom.  If the coverage is more than the threshold plus this value, the threshold will be raised.")
 	rootCmd.Flags().StringArrayVarP(&buildArgs, "build-arg", "b", getBuildArgDefault(), "Add a build argument.  Build arguments are used to select source files for later coverage checking.")
@@ -205,8 +204,6 @@ func init() {
 	// Bind them to viper
 	viper.BindPFlag("threshold", rootCmd.Flags().Lookup("threshold"))
 	viper.BindEnv("threshold")
-	viper.BindPFlag("coverprofile", rootCmd.Flags().Lookup("coverprofile"))
-	viper.BindEnv("coverprofile")
 	viper.BindPFlag("min_headroom", rootCmd.Flags().Lookup("min-headroom"))
 	viper.BindEnv("min_headroom")
 	viper.BindPFlag("max_headroom", rootCmd.Flags().Lookup("max-headroom"))

@@ -44,10 +44,6 @@ func TestRootCmdBase(t *testing.T) {
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
 		}),
-		patcher.SetVar(&getString, func(name string) string {
-			assert.Equal(t, "coverprofile", name)
-			return "coverage.out"
-		}),
 		patcher.SetVar(&getFloat64, func(name string) float64 {
 			value, ok := values[name]
 			assert.True(t, ok)
@@ -90,6 +86,7 @@ func TestRootCmdBase(t *testing.T) {
 			loadStatementsCalled = true
 			return common.DataSet{}, nil
 		}),
+		patcher.SetVar(&coverprofile, "coverage.out"),
 	).Install().Restore()
 
 	rootCmd.Run(rootCmd, []string{})
@@ -120,10 +117,6 @@ func TestRootCmdStatementsOnly(t *testing.T) {
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
 		}),
-		patcher.SetVar(&getString, func(name string) string {
-			assert.Equal(t, "coverprofile", name)
-			return ""
-		}),
 		patcher.SetVar(&getFloat64, func(name string) float64 {
 			value, ok := values[name]
 			assert.True(t, ok)
@@ -182,6 +175,7 @@ func TestRootCmdStatementsOnly(t *testing.T) {
 				},
 			}, nil
 		}),
+		patcher.SetVar(&coverprofile, ""),
 	).Install().Restore()
 
 	rootCmd.Run(rootCmd, []string{"./..."})
@@ -212,10 +206,6 @@ func TestRootCmdStatements(t *testing.T) {
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
 		}),
-		patcher.SetVar(&getString, func(name string) string {
-			assert.Equal(t, "coverprofile", name)
-			return "coverage.out"
-		}),
 		patcher.SetVar(&getFloat64, func(name string) float64 {
 			value, ok := values[name]
 			assert.True(t, ok)
@@ -274,6 +264,7 @@ func TestRootCmdStatements(t *testing.T) {
 				},
 			}, nil
 		}),
+		patcher.SetVar(&coverprofile, "coverage.out"),
 	).Install().Restore()
 
 	rootCmd.Run(rootCmd, []string{"./..."})
@@ -303,10 +294,6 @@ func TestRootCmdStatementsBuildArgs(t *testing.T) {
 		patcher.SetVar(&stderr, errStream),
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
-		}),
-		patcher.SetVar(&getString, func(name string) string {
-			assert.Equal(t, "coverprofile", name)
-			return "coverage.out"
 		}),
 		patcher.SetVar(&getFloat64, func(name string) float64 {
 			value, ok := values[name]
@@ -366,6 +353,7 @@ func TestRootCmdStatementsBuildArgs(t *testing.T) {
 				},
 			}, nil
 		}),
+		patcher.SetVar(&coverprofile, "coverage.out"),
 		patcher.SetVar(&buildArgs, []string{"arg1", "arg2", "arg3"}),
 	).Install().Restore()
 
@@ -396,10 +384,6 @@ func TestRootCmdStatementsExtra(t *testing.T) {
 		patcher.SetVar(&stderr, errStream),
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
-		}),
-		patcher.SetVar(&getString, func(name string) string {
-			assert.Equal(t, "coverprofile", name)
-			return "coverage.out"
 		}),
 		patcher.SetVar(&getFloat64, func(name string) float64 {
 			value, ok := values[name]
@@ -459,6 +443,7 @@ func TestRootCmdStatementsExtra(t *testing.T) {
 				},
 			}, nil
 		}),
+		patcher.SetVar(&coverprofile, "coverage.out"),
 	).Install().Restore()
 
 	rootCmd.Run(rootCmd, []string{"./..."})
@@ -489,10 +474,6 @@ func TestRootCmdStatementsConflict(t *testing.T) {
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
 		}),
-		patcher.SetVar(&getString, func(name string) string {
-			assert.Equal(t, "coverprofile", name)
-			return "coverage.out"
-		}),
 		patcher.SetVar(&getFloat64, func(name string) float64 {
 			value, ok := values[name]
 			assert.True(t, ok)
@@ -551,6 +532,7 @@ func TestRootCmdStatementsConflict(t *testing.T) {
 				},
 			}, nil
 		}),
+		patcher.SetVar(&coverprofile, "coverage.out"),
 	).Install().Restore()
 
 	rootCmd.Run(rootCmd, []string{"./..."})
@@ -581,10 +563,6 @@ func TestRootCmdNoProfile(t *testing.T) {
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
 		}),
-		patcher.SetVar(&getString, func(name string) string {
-			assert.Equal(t, "coverprofile", name)
-			return ""
-		}),
 		patcher.SetVar(&getFloat64, func(name string) float64 {
 			value, ok := values[name]
 			assert.True(t, ok)
@@ -627,6 +605,7 @@ func TestRootCmdNoProfile(t *testing.T) {
 			loadStatementsCalled = true
 			return common.DataSet{}, nil
 		}),
+		patcher.SetVar(&coverprofile, ""),
 	).Install().Restore()
 
 	assert.PanicsWithValue(t, "os.Exit(2)", func() { rootCmd.Run(rootCmd, []string{}) })
@@ -656,10 +635,6 @@ func TestRootCmdLoadCoverageFails(t *testing.T) {
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
 		}),
-		patcher.SetVar(&getString, func(name string) string {
-			assert.Equal(t, "coverprofile", name)
-			return "coverage.out"
-		}),
 		patcher.SetVar(&getFloat64, func(name string) float64 {
 			value, ok := values[name]
 			assert.True(t, ok)
@@ -683,6 +658,7 @@ func TestRootCmdLoadCoverageFails(t *testing.T) {
 			loadStatementsCalled = true
 			return common.DataSet{}, nil
 		}),
+		patcher.SetVar(&coverprofile, "coverage.out"),
 	).Install().Restore()
 
 	assert.PanicsWithValue(t, "os.Exit(3)", func() { rootCmd.Run(rootCmd, []string{}) })
@@ -711,10 +687,6 @@ func TestRootCmdLoadStatementsFails(t *testing.T) {
 		patcher.SetVar(&stderr, errStream),
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
-		}),
-		patcher.SetVar(&getString, func(name string) string {
-			assert.Equal(t, "coverprofile", name)
-			return "coverage.out"
 		}),
 		patcher.SetVar(&getFloat64, func(name string) float64 {
 			value, ok := values[name]
@@ -758,6 +730,7 @@ func TestRootCmdLoadStatementsFails(t *testing.T) {
 			loadStatementsCalled = true
 			return nil, assert.AnError
 		}),
+		patcher.SetVar(&coverprofile, "coverage.out"),
 	).Install().Restore()
 
 	assert.PanicsWithValue(t, "os.Exit(3)", func() { rootCmd.Run(rootCmd, []string{"./..."}) })
@@ -786,10 +759,6 @@ func TestRootCmdDetailed(t *testing.T) {
 		patcher.SetVar(&stderr, errStream),
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
-		}),
-		patcher.SetVar(&getString, func(name string) string {
-			assert.Equal(t, "coverprofile", name)
-			return "coverage.out"
 		}),
 		patcher.SetVar(&getFloat64, func(name string) float64 {
 			value, ok := values[name]
@@ -833,6 +802,7 @@ func TestRootCmdDetailed(t *testing.T) {
 			loadStatementsCalled = true
 			return common.DataSet{}, nil
 		}),
+		patcher.SetVar(&coverprofile, "coverage.out"),
 		patcher.SetVar(&detailed, true),
 	).Install().Restore()
 
@@ -873,10 +843,6 @@ func TestRootCmdSummary(t *testing.T) {
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
 		}),
-		patcher.SetVar(&getString, func(name string) string {
-			assert.Equal(t, "coverprofile", name)
-			return "coverage.out"
-		}),
 		patcher.SetVar(&getFloat64, func(name string) float64 {
 			value, ok := values[name]
 			assert.True(t, ok)
@@ -919,6 +885,7 @@ func TestRootCmdSummary(t *testing.T) {
 			loadStatementsCalled = true
 			return common.DataSet{}, nil
 		}),
+		patcher.SetVar(&coverprofile, "coverage.out"),
 		patcher.SetVar(&summary, true),
 	).Install().Restore()
 
@@ -958,10 +925,6 @@ func TestRootCmdLowCoverageBase(t *testing.T) {
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
 		}),
-		patcher.SetVar(&getString, func(name string) string {
-			assert.Equal(t, "coverprofile", name)
-			return "coverage.out"
-		}),
 		patcher.SetVar(&getFloat64, func(name string) float64 {
 			value, ok := values[name]
 			assert.True(t, ok)
@@ -1002,6 +965,7 @@ func TestRootCmdLowCoverageBase(t *testing.T) {
 			loadStatementsCalled = true
 			return common.DataSet{}, nil
 		}),
+		patcher.SetVar(&coverprofile, "coverage.out"),
 	).Install().Restore()
 
 	rootCmd.Run(rootCmd, []string{})
@@ -1032,10 +996,6 @@ func TestRootCmdLowCoverageLowThreshold(t *testing.T) {
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
 		}),
-		patcher.SetVar(&getString, func(name string) string {
-			assert.Equal(t, "coverprofile", name)
-			return "coverage.out"
-		}),
 		patcher.SetVar(&getFloat64, func(name string) float64 {
 			value, ok := values[name]
 			assert.True(t, ok)
@@ -1076,6 +1036,7 @@ func TestRootCmdLowCoverageLowThreshold(t *testing.T) {
 			loadStatementsCalled = true
 			return common.DataSet{}, nil
 		}),
+		patcher.SetVar(&coverprofile, "coverage.out"),
 	).Install().Restore()
 
 	rootCmd.Run(rootCmd, []string{})
@@ -1106,10 +1067,6 @@ func TestRootCmdLowCoverageHighThreshold(t *testing.T) {
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
 		}),
-		patcher.SetVar(&getString, func(name string) string {
-			assert.Equal(t, "coverprofile", name)
-			return "coverage.out"
-		}),
 		patcher.SetVar(&getFloat64, func(name string) float64 {
 			value, ok := values[name]
 			assert.True(t, ok)
@@ -1150,6 +1107,7 @@ func TestRootCmdLowCoverageHighThreshold(t *testing.T) {
 			loadStatementsCalled = true
 			return common.DataSet{}, nil
 		}),
+		patcher.SetVar(&coverprofile, "coverage.out"),
 	).Install().Restore()
 
 	assert.PanicsWithValue(t, "os.Exit(1)", func() { rootCmd.Run(rootCmd, []string{}) })
@@ -1178,10 +1136,6 @@ func TestRootCmdUpdateNeededNoConfig(t *testing.T) {
 		patcher.SetVar(&stderr, errStream),
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
-		}),
-		patcher.SetVar(&getString, func(name string) string {
-			assert.Equal(t, "coverprofile", name)
-			return "coverage.out"
 		}),
 		patcher.SetVar(&getFloat64, func(name string) float64 {
 			value, ok := values[name]
@@ -1225,6 +1179,7 @@ func TestRootCmdUpdateNeededNoConfig(t *testing.T) {
 			loadStatementsCalled = true
 			return common.DataSet{}, nil
 		}),
+		patcher.SetVar(&coverprofile, "coverage.out"),
 	).Install().Restore()
 
 	rootCmd.Run(rootCmd, []string{})
@@ -1257,10 +1212,6 @@ func TestRootCmdUpdateNeededWithConfigReadOnly(t *testing.T) {
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
 		}),
-		patcher.SetVar(&getString, func(name string) string {
-			assert.Equal(t, "coverprofile", name)
-			return "coverage.out"
-		}),
 		patcher.SetVar(&getFloat64, func(name string) float64 {
 			value, ok := values[name]
 			assert.True(t, ok)
@@ -1303,6 +1254,7 @@ func TestRootCmdUpdateNeededWithConfigReadOnly(t *testing.T) {
 			loadStatementsCalled = true
 			return common.DataSet{}, nil
 		}),
+		patcher.SetVar(&coverprofile, "coverage.out"),
 	).Install().Restore()
 
 	assert.PanicsWithValue(t, "os.Exit(5)", func() { rootCmd.Run(rootCmd, []string{}) })
@@ -1334,10 +1286,6 @@ func TestRootCmdUpdateUnneededWithConfigReadOnly(t *testing.T) {
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
 		}),
-		patcher.SetVar(&getString, func(name string) string {
-			assert.Equal(t, "coverprofile", name)
-			return "coverage.out"
-		}),
 		patcher.SetVar(&getFloat64, func(name string) float64 {
 			value, ok := values[name]
 			assert.True(t, ok)
@@ -1380,6 +1328,7 @@ func TestRootCmdUpdateUnneededWithConfigReadOnly(t *testing.T) {
 			loadStatementsCalled = true
 			return common.DataSet{}, nil
 		}),
+		patcher.SetVar(&coverprofile, "coverage.out"),
 	).Install().Restore()
 
 	rootCmd.Run(rootCmd, []string{})
@@ -1410,10 +1359,6 @@ func TestRootCmdUpdateNeededWithConfig(t *testing.T) {
 		patcher.SetVar(&config, "test.yaml"),
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
-		}),
-		patcher.SetVar(&getString, func(name string) string {
-			assert.Equal(t, "coverprofile", name)
-			return "coverage.out"
 		}),
 		patcher.SetVar(&getFloat64, func(name string) float64 {
 			value, ok := values[name]
@@ -1460,6 +1405,7 @@ func TestRootCmdUpdateNeededWithConfig(t *testing.T) {
 			loadStatementsCalled = true
 			return common.DataSet{}, nil
 		}),
+		patcher.SetVar(&coverprofile, "coverage.out"),
 	).Install().Restore()
 
 	rootCmd.Run(rootCmd, []string{})
@@ -1490,10 +1436,6 @@ func TestRootCmdUpdateNeededWithConfigFails(t *testing.T) {
 		patcher.SetVar(&config, "test.yaml"),
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
-		}),
-		patcher.SetVar(&getString, func(name string) string {
-			assert.Equal(t, "coverprofile", name)
-			return "coverage.out"
 		}),
 		patcher.SetVar(&getFloat64, func(name string) float64 {
 			value, ok := values[name]
@@ -1540,6 +1482,7 @@ func TestRootCmdUpdateNeededWithConfigFails(t *testing.T) {
 			loadStatementsCalled = true
 			return common.DataSet{}, nil
 		}),
+		patcher.SetVar(&coverprofile, "coverage.out"),
 	).Install().Restore()
 
 	assert.PanicsWithValue(t, "os.Exit(5)", func() { rootCmd.Run(rootCmd, []string{}) })
