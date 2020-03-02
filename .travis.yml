@@ -1,6 +1,7 @@
 language: go
 go:
 - "1.13.x"
+- "1.14.x"
 install:
 - go get -u -v golang.org/x/tools/cmd/goimports
 - go get -u -v golang.org/x/lint/golint
