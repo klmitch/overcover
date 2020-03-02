@@ -164,7 +164,7 @@ else
 	mv $(IGNORE).tmp $(IGNORE)
 endif
 
-include scripts/*.mk
+include $(wildcard scripts/*.mk)
 
 help: ## Emit help for the Makefile
 	@echo "Available make targets:"
