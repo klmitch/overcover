@@ -8,5 +8,4 @@ install:
 - go get -u -v github.com/mattn/goveralls
 script:
 - make CI=true
-- make cover-test CI=true
 - $GOPATH/bin/goveralls -coverprofile=coverage.out -service=travis-ci
