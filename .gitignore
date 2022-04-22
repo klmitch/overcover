@@ -1,5 +1,7 @@
 overcover
-coverage.out
-coverage.html
+cover.out
+cover.html
+cover.xml
+report.xml
 .gitignore.tmp
-tools
+.tools

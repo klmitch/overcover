@@ -1,0 +1,18 @@
+linters:
+  enable:
+  - exhaustive
+  - goconst
+  - goerr113
+  - gofmt
+  - gofumpt
+  - goimports
+  - revive
+  - goprintffuncname
+  - gosec
+  - misspell
+  - whitespace
+severity:
+  default-severity: blocker
+linters-settings:
+  goimports:
+    local-prefixes: github.com/klmitch/overcover
