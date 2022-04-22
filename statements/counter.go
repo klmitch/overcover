@@ -26,7 +26,7 @@ import (
 // Patch points for top-level functions called by functions in this
 // file.
 var (
-	walk func(ast.Visitor, ast.Node)                                    = ast.Walk
+	walk                                                                = ast.Walk
 	load func(*packages.Config, ...string) ([]*packages.Package, error) = packages.Load
 )
 

@@ -45,7 +45,7 @@ var (
 var (
 	stdout         io.Writer                                        = os.Stdout
 	stderr         io.Writer                                        = os.Stderr
-	exit           func(int)                                        = os.Exit
+	exit                                                            = os.Exit
 	getFloat64     func(string) float64                             = viper.GetFloat64
 	setConfigFile  func(string)                                     = viper.SetConfigFile
 	readInConfig   func() error                                     = viper.ReadInConfig
@@ -66,7 +66,7 @@ var rootCmd = &cobra.Command{
 		// and sums the statement counts
 		if coverprofile == "" && len(args) == 0 {
 			fmt.Fprintf(stderr, "No coverage profile file specified!  Use -p or provide a configuration file.\n")
-			cmd.Usage()
+			_ = cmd.Usage()
 			exit(2)
 		}
 		var ds common.DataSet
@@ -202,12 +202,12 @@ func init() {
 	rootCmd.Flags().BoolVarP(&summary, "summary", "s", summaryDefault, "Used to request per-package summary coverage data be emitted.  May be used in conjunction with --detailed.")
 
 	// Bind them to viper
-	viper.BindPFlag("threshold", rootCmd.Flags().Lookup("threshold"))
-	viper.BindEnv("threshold")
-	viper.BindPFlag("min_headroom", rootCmd.Flags().Lookup("min-headroom"))
-	viper.BindEnv("min_headroom")
-	viper.BindPFlag("max_headroom", rootCmd.Flags().Lookup("max-headroom"))
-	viper.BindEnv("max_headroom")
+	_ = viper.BindPFlag("threshold", rootCmd.Flags().Lookup("threshold"))
+	_ = viper.BindEnv("threshold")
+	_ = viper.BindPFlag("min_headroom", rootCmd.Flags().Lookup("min-headroom"))
+	_ = viper.BindEnv("min_headroom")
+	_ = viper.BindPFlag("max_headroom", rootCmd.Flags().Lookup("max-headroom"))
+	_ = viper.BindEnv("max_headroom")
 }
 
 // readConfig reads the configuration file using Viper.

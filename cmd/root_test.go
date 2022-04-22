@@ -1556,7 +1556,7 @@ func TestReadConfigBase(t *testing.T) {
 			return nil
 		}),
 		patcher.SetVar(&configFileUsed, func() string {
-			return "config.yaml"
+			return "config.yaml" //nolint:goconst
 		}),
 	).Install().Restore()
 
