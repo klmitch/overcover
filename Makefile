@@ -43,7 +43,7 @@ LINT_CONF          = .golangci.yml
 LINT_ENABLE        = exhaustive goconst goerr113 gofmt gofumpt goimports revive
 LINT_ENABLE        += goprintffuncname gosec misspell whitespace
 LINT_URL           = https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh
-LINT_VERSION       = v1.45.2
+LINT_VERSION       = v1.47.2
 
 # CI-linked variables; these set up read-only behavior within a CI
 # system
