@@ -251,7 +251,7 @@ func TestStmtVisitorVisitAssignStmt(t *testing.T) {
 	}
 	node := &ast.AssignStmt{}
 	walkCalled := false
-	defer patcher.SetVar(&walk, func(v ast.Visitor, n ast.Node) {
+	defer patcher.SetVar(&walk, func(v ast.Visitor, _ ast.Node) {
 		assert.Same(t, obj, v)
 		walkCalled = true
 	}).Install().Restore()
@@ -269,7 +269,7 @@ func TestStmtVisitorVisitBadStmt(t *testing.T) {
 	}
 	node := &ast.BadStmt{}
 	walkCalled := false
-	defer patcher.SetVar(&walk, func(v ast.Visitor, n ast.Node) {
+	defer patcher.SetVar(&walk, func(v ast.Visitor, _ ast.Node) {
 		assert.Same(t, obj, v)
 		walkCalled = true
 	}).Install().Restore()
@@ -287,7 +287,7 @@ func TestStmtVisitorVisitBranchStmt(t *testing.T) {
 	}
 	node := &ast.BranchStmt{}
 	walkCalled := false
-	defer patcher.SetVar(&walk, func(v ast.Visitor, n ast.Node) {
+	defer patcher.SetVar(&walk, func(v ast.Visitor, _ ast.Node) {
 		assert.Same(t, obj, v)
 		walkCalled = true
 	}).Install().Restore()
@@ -305,7 +305,7 @@ func TestStmtVisitorVisitDeclStmt(t *testing.T) {
 	}
 	node := &ast.DeclStmt{}
 	walkCalled := false
-	defer patcher.SetVar(&walk, func(v ast.Visitor, n ast.Node) {
+	defer patcher.SetVar(&walk, func(v ast.Visitor, _ ast.Node) {
 		assert.Same(t, obj, v)
 		walkCalled = true
 	}).Install().Restore()
@@ -323,7 +323,7 @@ func TestStmtVisitorVisitDeferStmt(t *testing.T) {
 	}
 	node := &ast.DeferStmt{}
 	walkCalled := false
-	defer patcher.SetVar(&walk, func(v ast.Visitor, n ast.Node) {
+	defer patcher.SetVar(&walk, func(v ast.Visitor, _ ast.Node) {
 		assert.Same(t, obj, v)
 		walkCalled = true
 	}).Install().Restore()
@@ -341,7 +341,7 @@ func TestStmtVisitorVisitEmptyStmt(t *testing.T) {
 	}
 	node := &ast.EmptyStmt{}
 	walkCalled := false
-	defer patcher.SetVar(&walk, func(v ast.Visitor, n ast.Node) {
+	defer patcher.SetVar(&walk, func(v ast.Visitor, _ ast.Node) {
 		assert.Same(t, obj, v)
 		walkCalled = true
 	}).Install().Restore()
@@ -359,7 +359,7 @@ func TestStmtVisitorVisitExprStmt(t *testing.T) {
 	}
 	node := &ast.ExprStmt{}
 	walkCalled := false
-	defer patcher.SetVar(&walk, func(v ast.Visitor, n ast.Node) {
+	defer patcher.SetVar(&walk, func(v ast.Visitor, _ ast.Node) {
 		assert.Same(t, obj, v)
 		walkCalled = true
 	}).Install().Restore()
@@ -377,7 +377,7 @@ func TestStmtVisitorVisitGoStmt(t *testing.T) {
 	}
 	node := &ast.GoStmt{}
 	walkCalled := false
-	defer patcher.SetVar(&walk, func(v ast.Visitor, n ast.Node) {
+	defer patcher.SetVar(&walk, func(v ast.Visitor, _ ast.Node) {
 		assert.Same(t, obj, v)
 		walkCalled = true
 	}).Install().Restore()
@@ -395,7 +395,7 @@ func TestStmtVisitorVisitIncDecStmt(t *testing.T) {
 	}
 	node := &ast.IncDecStmt{}
 	walkCalled := false
-	defer patcher.SetVar(&walk, func(v ast.Visitor, n ast.Node) {
+	defer patcher.SetVar(&walk, func(v ast.Visitor, _ ast.Node) {
 		assert.Same(t, obj, v)
 		walkCalled = true
 	}).Install().Restore()
@@ -413,7 +413,7 @@ func TestStmtVisitorVisitRangeStmt(t *testing.T) {
 	}
 	node := &ast.RangeStmt{}
 	walkCalled := false
-	defer patcher.SetVar(&walk, func(v ast.Visitor, n ast.Node) {
+	defer patcher.SetVar(&walk, func(v ast.Visitor, _ ast.Node) {
 		assert.Same(t, obj, v)
 		walkCalled = true
 	}).Install().Restore()
@@ -431,7 +431,7 @@ func TestStmtVisitorVisitReturnStmt(t *testing.T) {
 	}
 	node := &ast.ReturnStmt{}
 	walkCalled := false
-	defer patcher.SetVar(&walk, func(v ast.Visitor, n ast.Node) {
+	defer patcher.SetVar(&walk, func(v ast.Visitor, _ ast.Node) {
 		assert.Same(t, obj, v)
 		walkCalled = true
 	}).Install().Restore()
@@ -449,7 +449,7 @@ func TestStmtVisitorVisitSelectStmt(t *testing.T) {
 	}
 	node := &ast.SelectStmt{}
 	walkCalled := false
-	defer patcher.SetVar(&walk, func(v ast.Visitor, n ast.Node) {
+	defer patcher.SetVar(&walk, func(v ast.Visitor, _ ast.Node) {
 		assert.Same(t, obj, v)
 		walkCalled = true
 	}).Install().Restore()
@@ -467,7 +467,7 @@ func TestStmtVisitorVisitSendStmt(t *testing.T) {
 	}
 	node := &ast.SendStmt{}
 	walkCalled := false
-	defer patcher.SetVar(&walk, func(v ast.Visitor, n ast.Node) {
+	defer patcher.SetVar(&walk, func(v ast.Visitor, _ ast.Node) {
 		assert.Same(t, obj, v)
 		walkCalled = true
 	}).Install().Restore()
@@ -563,7 +563,7 @@ func TestLoadError(t *testing.T) {
 			loadCalled = true
 			return nil, assert.AnError
 		}),
-		patcher.SetVar(&walk, func(v ast.Visitor, n ast.Node) {
+		patcher.SetVar(&walk, func(_ ast.Visitor, _ ast.Node) {
 			walkCalled++
 		}),
 	).Install().Restore()

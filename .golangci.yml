@@ -1,18 +1,33 @@
 linters:
   enable:
+  - asciicheck
+  - err113
   - exhaustive
+  - gocognit
   - goconst
-  - goerr113
   - gofmt
   - gofumpt
   - goimports
-  - revive
   - goprintffuncname
   - gosec
   - misspell
+  - nolintlint
+  - predeclared
+  - promlinter
+  - protogetter
+  - revive
+  - sloglint
+  - spancheck
+  - unconvert
+  - wastedassign
   - whitespace
+  - zerologlint
 severity:
   default-severity: blocker
 linters-settings:
+  goconst:
+    ignore-tests: true
+  gofumpt:
+    module-path: github.com/klmitch/overcover
   goimports:
     local-prefixes: github.com/klmitch/overcover

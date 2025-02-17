@@ -49,10 +49,10 @@ func TestRootCmdBase(t *testing.T) {
 			assert.True(t, ok)
 			return value
 		}),
-		patcher.SetVar(&setConfig, func(name string, value interface{}) {
+		patcher.SetVar(&setConfig, func(_ string, _ interface{}) {
 			setConfigCalled = true
 		}),
-		patcher.SetVar(&writeConfig, func(fname string) error {
+		patcher.SetVar(&writeConfig, func(_ string) error {
 			writeConfigCalled = true
 			return nil
 		}),
@@ -122,10 +122,10 @@ func TestRootCmdStatementsOnly(t *testing.T) {
 			assert.True(t, ok)
 			return value
 		}),
-		patcher.SetVar(&setConfig, func(name string, value interface{}) {
+		patcher.SetVar(&setConfig, func(_ string, _ interface{}) {
 			setConfigCalled = true
 		}),
-		patcher.SetVar(&writeConfig, func(fname string) error {
+		patcher.SetVar(&writeConfig, func(_ string) error {
 			writeConfigCalled = true
 			return nil
 		}),
@@ -211,10 +211,10 @@ func TestRootCmdStatements(t *testing.T) {
 			assert.True(t, ok)
 			return value
 		}),
-		patcher.SetVar(&setConfig, func(name string, value interface{}) {
+		patcher.SetVar(&setConfig, func(_ string, _ interface{}) {
 			setConfigCalled = true
 		}),
-		patcher.SetVar(&writeConfig, func(fname string) error {
+		patcher.SetVar(&writeConfig, func(_ string) error {
 			writeConfigCalled = true
 			return nil
 		}),
@@ -300,10 +300,10 @@ func TestRootCmdStatementsBuildArgs(t *testing.T) {
 			assert.True(t, ok)
 			return value
 		}),
-		patcher.SetVar(&setConfig, func(name string, value interface{}) {
+		patcher.SetVar(&setConfig, func(_ string, _ interface{}) {
 			setConfigCalled = true
 		}),
-		patcher.SetVar(&writeConfig, func(fname string) error {
+		patcher.SetVar(&writeConfig, func(_ string) error {
 			writeConfigCalled = true
 			return nil
 		}),
@@ -390,10 +390,10 @@ func TestRootCmdStatementsExtra(t *testing.T) {
 			assert.True(t, ok)
 			return value
 		}),
-		patcher.SetVar(&setConfig, func(name string, value interface{}) {
+		patcher.SetVar(&setConfig, func(_ string, _ interface{}) {
 			setConfigCalled = true
 		}),
-		patcher.SetVar(&writeConfig, func(fname string) error {
+		patcher.SetVar(&writeConfig, func(_ string) error {
 			writeConfigCalled = true
 			return nil
 		}),
@@ -479,10 +479,10 @@ func TestRootCmdStatementsConflict(t *testing.T) {
 			assert.True(t, ok)
 			return value
 		}),
-		patcher.SetVar(&setConfig, func(name string, value interface{}) {
+		patcher.SetVar(&setConfig, func(_ string, _ interface{}) {
 			setConfigCalled = true
 		}),
-		patcher.SetVar(&writeConfig, func(fname string) error {
+		patcher.SetVar(&writeConfig, func(_ string) error {
 			writeConfigCalled = true
 			return nil
 		}),
@@ -568,10 +568,10 @@ func TestRootCmdNoProfile(t *testing.T) {
 			assert.True(t, ok)
 			return value
 		}),
-		patcher.SetVar(&setConfig, func(name string, value interface{}) {
+		patcher.SetVar(&setConfig, func(_ string, _ interface{}) {
 			setConfigCalled = true
 		}),
-		patcher.SetVar(&writeConfig, func(fname string) error {
+		patcher.SetVar(&writeConfig, func(_ string) error {
 			writeConfigCalled = true
 			return nil
 		}),
@@ -640,10 +640,10 @@ func TestRootCmdLoadCoverageFails(t *testing.T) {
 			assert.True(t, ok)
 			return value
 		}),
-		patcher.SetVar(&setConfig, func(name string, value interface{}) {
+		patcher.SetVar(&setConfig, func(_ string, _ interface{}) {
 			setConfigCalled = true
 		}),
-		patcher.SetVar(&writeConfig, func(fname string) error {
+		patcher.SetVar(&writeConfig, func(_ string) error {
 			writeConfigCalled = true
 			return nil
 		}),
@@ -693,10 +693,10 @@ func TestRootCmdLoadStatementsFails(t *testing.T) {
 			assert.True(t, ok)
 			return value
 		}),
-		patcher.SetVar(&setConfig, func(name string, value interface{}) {
+		patcher.SetVar(&setConfig, func(_ string, _ interface{}) {
 			setConfigCalled = true
 		}),
-		patcher.SetVar(&writeConfig, func(fname string) error {
+		patcher.SetVar(&writeConfig, func(_ string) error {
 			writeConfigCalled = true
 			return nil
 		}),
@@ -765,10 +765,10 @@ func TestRootCmdDetailed(t *testing.T) {
 			assert.True(t, ok)
 			return value
 		}),
-		patcher.SetVar(&setConfig, func(name string, value interface{}) {
+		patcher.SetVar(&setConfig, func(_ string, _ interface{}) {
 			setConfigCalled = true
 		}),
-		patcher.SetVar(&writeConfig, func(fname string) error {
+		patcher.SetVar(&writeConfig, func(_ string) error {
 			writeConfigCalled = true
 			return nil
 		}),
@@ -848,10 +848,10 @@ func TestRootCmdSummary(t *testing.T) {
 			assert.True(t, ok)
 			return value
 		}),
-		patcher.SetVar(&setConfig, func(name string, value interface{}) {
+		patcher.SetVar(&setConfig, func(_ string, _ interface{}) {
 			setConfigCalled = true
 		}),
-		patcher.SetVar(&writeConfig, func(fname string) error {
+		patcher.SetVar(&writeConfig, func(_ string) error {
 			writeConfigCalled = true
 			return nil
 		}),
@@ -930,10 +930,10 @@ func TestRootCmdLowCoverageBase(t *testing.T) {
 			assert.True(t, ok)
 			return value
 		}),
-		patcher.SetVar(&setConfig, func(name string, value interface{}) {
+		patcher.SetVar(&setConfig, func(_ string, _ interface{}) {
 			setConfigCalled = true
 		}),
-		patcher.SetVar(&writeConfig, func(fname string) error {
+		patcher.SetVar(&writeConfig, func(_ string) error {
 			writeConfigCalled = true
 			return nil
 		}),
@@ -1001,10 +1001,10 @@ func TestRootCmdLowCoverageLowThreshold(t *testing.T) {
 			assert.True(t, ok)
 			return value
 		}),
-		patcher.SetVar(&setConfig, func(name string, value interface{}) {
+		patcher.SetVar(&setConfig, func(_ string, _ interface{}) {
 			setConfigCalled = true
 		}),
-		patcher.SetVar(&writeConfig, func(fname string) error {
+		patcher.SetVar(&writeConfig, func(_ string) error {
 			writeConfigCalled = true
 			return nil
 		}),
@@ -1072,10 +1072,10 @@ func TestRootCmdLowCoverageHighThreshold(t *testing.T) {
 			assert.True(t, ok)
 			return value
 		}),
-		patcher.SetVar(&setConfig, func(name string, value interface{}) {
+		patcher.SetVar(&setConfig, func(_ string, _ interface{}) {
 			setConfigCalled = true
 		}),
-		patcher.SetVar(&writeConfig, func(fname string) error {
+		patcher.SetVar(&writeConfig, func(_ string) error {
 			writeConfigCalled = true
 			return nil
 		}),
@@ -1142,10 +1142,10 @@ func TestRootCmdUpdateNeededNoConfig(t *testing.T) {
 			assert.True(t, ok)
 			return value
 		}),
-		patcher.SetVar(&setConfig, func(name string, value interface{}) {
+		patcher.SetVar(&setConfig, func(_ string, _ interface{}) {
 			setConfigCalled = true
 		}),
-		patcher.SetVar(&writeConfig, func(fname string) error {
+		patcher.SetVar(&writeConfig, func(_ string) error {
 			writeConfigCalled = true
 			return nil
 		}),
@@ -1217,10 +1217,10 @@ func TestRootCmdUpdateNeededWithConfigReadOnly(t *testing.T) {
 			assert.True(t, ok)
 			return value
 		}),
-		patcher.SetVar(&setConfig, func(name string, value interface{}) {
+		patcher.SetVar(&setConfig, func(_ string, _ interface{}) {
 			setConfigCalled = true
 		}),
-		patcher.SetVar(&writeConfig, func(fname string) error {
+		patcher.SetVar(&writeConfig, func(_ string) error {
 			writeConfigCalled = true
 			return nil
 		}),
@@ -1291,10 +1291,10 @@ func TestRootCmdUpdateUnneededWithConfigReadOnly(t *testing.T) {
 			assert.True(t, ok)
 			return value
 		}),
-		patcher.SetVar(&setConfig, func(name string, value interface{}) {
+		patcher.SetVar(&setConfig, func(_ string, _ interface{}) {
 			setConfigCalled = true
 		}),
-		patcher.SetVar(&writeConfig, func(fname string) error {
+		patcher.SetVar(&writeConfig, func(_ string) error {
 			writeConfigCalled = true
 			return nil
 		}),
@@ -1497,7 +1497,7 @@ func TestRootCmdUpdateNeededWithConfigFails(t *testing.T) {
 func TestExecuteSuccess(t *testing.T) {
 	errStream := &bytes.Buffer{}
 	defer patcher.NewPatchMaster(
-		patcher.SetVar(&rootCmd.Run, func(cmd *cobra.Command, args []string) {}),
+		patcher.SetVar(&rootCmd.Run, func(_ *cobra.Command, _ []string) {}),
 		patcher.SetVar(&stderr, errStream),
 		patcher.SetVar(&exit, func(code int) {
 			panic(fmt.Sprintf("os.Exit(%d)", code))
@@ -1512,7 +1512,7 @@ func TestExecuteSuccess(t *testing.T) {
 func TestExecuteFailure(t *testing.T) {
 	errStream := &bytes.Buffer{}
 	defer patcher.NewPatchMaster(
-		patcher.SetVar(&rootCmd.RunE, func(cmd *cobra.Command, args []string) error {
+		patcher.SetVar(&rootCmd.RunE, func(_ *cobra.Command, _ []string) error {
 			return assert.AnError
 		}),
 		patcher.SetVar(&stderr, errStream),
@@ -1556,7 +1556,7 @@ func TestReadConfigBase(t *testing.T) {
 			return nil
 		}),
 		patcher.SetVar(&configFileUsed, func() string {
-			return "config.yaml" //nolint:goconst
+			return "config.yaml"
 		}),
 	).Install().Restore()
 

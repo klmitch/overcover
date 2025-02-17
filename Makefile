@@ -21,6 +21,16 @@ PKG_NAME           = $(notdir $(PKG_ROOT))
 TOOLDIR            = .tools
 TOOLS              =
 TOOLS_CONF         = .tools.conf
+TOOLS_VERSION      := version() { \
+	vers=latest; \
+	if [ -r "$(TOOLS_CONF)" ]; then \
+		tmp=`grep "$$1" "$(TOOLS_CONF)" | awk '{print $$2}'`; \
+		if [ "$${tmp}" != "" ]; then \
+			vers="$${tmp}"; \
+		fi; \
+	fi; \
+	echo "$${vers}" ; \
+}
 
 # Names of the various commands
 GO                 = go
@@ -40,10 +50,12 @@ COV_CONF           = .overcover.yaml
 # Linter configuration file and default list of linters to enable if
 # generating it
 LINT_CONF          = .golangci.yml
-LINT_ENABLE        = exhaustive goconst goerr113 gofmt gofumpt goimports revive
-LINT_ENABLE        += goprintffuncname gosec misspell whitespace
+LINT_ENABLE        = asciicheck err113 exhaustive gocognit goconst gofmt
+LINT_ENABLE        += gofumpt goimports goprintffuncname gosec misspell
+LINT_ENABLE        += nolintlint predeclared promlinter protogetter revive
+LINT_ENABLE        += sloglint spancheck unconvert wastedassign whitespace
+LINT_ENABLE        += zerologlint
 LINT_URL           = https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh
-LINT_VERSION       = v1.52.2
 
 # CI-linked variables; these set up read-only behavior within a CI
 # system
@@ -114,7 +126,7 @@ PLUGS              = $(foreach plug,$(PLUGSRC),$(call FULLBINNAME,$(plug)).$(PLU
 CLEAN              = $(BINS) $(PLUGS) $(COVER_OUT) $(COVER_HTML) $(COVER_XML) $(JUNIT_OUT) $(IGNORE).tmp $(TOOLDIR)
 
 # Files to be ignored by git
-IGNORE_FILES       = $(CBINS) $(CPLUGS) $(CCOVER_OUT) $(CCOVER_HTML) $(CCOVER_XML) $(CJUNIT_OUT) $(IGNORE).tmp $(TOOLDIR)
+IGNORE_FILES       = $(addprefix /,$(CBINS) $(CPLUGS) $(CCOVER_OUT) $(CCOVER_HTML) $(CCOVER_XML) $(CJUNIT_OUT) $(IGNORE).tmp $(TOOLDIR))
 
 # Compute the dependencies for the "all" and "build" targets
 ALL_TARG           = $(IGNORE) test
@@ -170,11 +182,15 @@ $(LINT_CONF):
 	@echo "linters:" >> $(LINT_CONF); \
 	echo "  enable:" >> $(LINT_CONF); \
 	for linter in $(LINT_ENABLE); do \
-	    echo "  - $${linter}" >> $(LINT_CONF); \
+		echo "  - $${linter}" >> $(LINT_CONF); \
 	done; \
 	echo "severity:" >> $(LINT_CONF); \
 	echo "  default-severity: blocker" >> $(LINT_CONF); \
 	echo "linters-settings:" >> $(LINT_CONF); \
+	echo "  goconst:" >> $(LINT_CONF); \
+	echo "    ignore-tests: true" >> $(LINT_CONF); \
+	echo "  gofumpt:" >> $(LINT_CONF); \
+	echo "    module-path: $(PKG_ROOT)" >> $(LINT_CONF); \
 	echo "  goimports:" >> $(LINT_CONF); \
 	echo "    local-prefixes: $(PKG_ROOT)" >> $(LINT_CONF)
 
@@ -221,26 +237,26 @@ $(TOOLDIR):
 
 # Ensures that golangci-lint is available
 $(GOLANGCI_LINT): $(TOOLDIR)
+	$(TOOLS_VERSION); \
+	LINT_VERSION=`version $$(basename $(GOLANGCI_LINT))`; \
 	if command -v wget; then \
-	    wget -O- -nv $(LINT_URL) | sh -s -- -b $(TOOLDIR) $(LINT_VERSION); \
+		echo "Installing golangci-lint version $${LINT_VERSION} with wget"; \
+		wget -O- -nv $(LINT_URL) | sh -s -- -b $(TOOLDIR) $${LINT_VERSION}; \
 	elif command -v curl; then \
-	    curl -sSfL $(LINT_URL) | sh -s -- -b $(TOOLDIR) $(LINT_VERSION); \
+		echo "Installing golangci-lint version $${LINT_VERSION} with curl"; \
+		curl -sSfL $(LINT_URL) | sh -s -- -b $(TOOLDIR) $${LINT_VERSION}; \
 	else \
-	    echo "Install curl or wget" >&2; \
-	    exit 1; \
+		echo "Install curl or wget" >&2; \
+		exit 1; \
 	fi
 
 # Sets up build targets for each required tool
 define TOOL_template =
 ./$(TOOLDIR)/$$(notdir $(1)): $(TOOLDIR)
-	version=latest; \
-	if [ -r "$(TOOLS_CONF)" ]; then \
-		tmp=`grep "$(1)" "$(TOOLS_CONF)" | awk '{print $$$$2}'`; \
-		if [ "$$$${tmp}" != "" ]; then \
-			version=$$$${tmp}; \
-		fi; \
-	fi; \
-	GOBIN=$(abspath $(TOOLDIR)) go install "$(1)@$$$${version}"
+	$$(TOOLS_VERSION); \
+	vers=`version $$$$(basename $(1))`; \
+	echo "Installing $(1) version $$$${vers}"; \
+	GOBIN=$(abspath $(TOOLDIR)) go install "$(1)@$$$${vers}"
 endef
 
 $(foreach tool,$(TOOLS),$(eval $(call TOOL_template,$(tool))))
