@@ -1,13 +1,13 @@
+version: "2"
 linters:
   enable:
   - asciicheck
+  - dupl
   - err113
   - exhaustive
+  - exptostd
   - gocognit
   - goconst
-  - gofmt
-  - gofumpt
-  - goimports
   - goprintffuncname
   - gosec
   - misspell
@@ -22,12 +22,44 @@ linters:
   - wastedassign
   - whitespace
   - zerologlint
+  exclusions:
+    generated: lax
+    presets:
+    - comments
+    - common-false-positives
+    - legacy
+    - std-error-handling
+    rules:
+    - linters:
+      - dupl
+      - goconst
+      path: (.+)_test\.go
+    paths:
+    - third_party$
+    - builtin$
+    - examples$
 severity:
-  default-severity: blocker
-linters-settings:
-  goconst:
-    ignore-tests: true
-  gofumpt:
-    module-path: github.com/klmitch/overcover
-  goimports:
-    local-prefixes: github.com/klmitch/overcover
+  default: blocker
+formatters:
+  enable:
+  - gofmt
+  - gofumpt
+  - goimports
+  settings:
+    gofumpt:
+      module-path: github.com/klmitch/overcover
+    goimports:
+      local-prefixes:
+      - github.com/klmitch/overcover
+  exclusions:
+    generated: lax
+    paths:
+    - third_party$
+    - builtin$
+    - examples$
+output:
+  formats:
+    text:
+      path: stdout
+      print-issued-lines: false
+      colors: true

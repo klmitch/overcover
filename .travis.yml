@@ -1,7 +1,0 @@
-language: go
-go:
-- "1.18.x"
-- "1.19.x"
-- "1.20.x"
-script:
-- make all goveralls CI=true

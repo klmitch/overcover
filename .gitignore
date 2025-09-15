@@ -1,7 +1,8 @@
-overcover
-cover.out
-cover.html
-cover.xml
-report.xml
-.gitignore.tmp
-.tools
+/overcover
+/cover.out
+/cover.html
+/cover.xml
+/report.xml
+/.gitignore.tmp
+/.golangci.yml.tmp
+/.tools

@@ -7,8 +7,9 @@ IGNORE             = .gitignore
 # Additional arguments to pass to various target rules
 BUILD_ARGS         ?=
 TEST_REPORT_ARGS   ?= --format testname
-TEST_ARGS          ?= -race
+TEST_ARGS          ?=
 LINT_ARGS          ?=
+FORMAT_ARGS        ?=
 COVER_ARGS         ?= --summary
 COVER_REPORT_ARGS  ?=
 COVER_XML_ARGS     ?=
@@ -34,8 +35,6 @@ TOOLS_VERSION      := version() { \
 
 # Names of the various commands
 GO                 = go
-GOIMPORTS          = ./$(TOOLDIR)/goimports
-TOOLS              += golang.org/x/tools/cmd/goimports
 GOLANGCI_LINT      = ./$(TOOLDIR)/golangci-lint
 GOTESTSUM          = ./$(TOOLDIR)/gotestsum
 TOOLS              += gotest.tools/gotestsum
@@ -50,11 +49,12 @@ COV_CONF           = .overcover.yaml
 # Linter configuration file and default list of linters to enable if
 # generating it
 LINT_CONF          = .golangci.yml
-LINT_ENABLE        = asciicheck err113 exhaustive gocognit goconst gofmt
-LINT_ENABLE        += gofumpt goimports goprintffuncname gosec misspell
-LINT_ENABLE        += nolintlint predeclared promlinter protogetter revive
-LINT_ENABLE        += sloglint spancheck unconvert wastedassign whitespace
-LINT_ENABLE        += zerologlint
+LINT_LINTERS       = asciicheck dupl err113 exhaustive exptostd gocognit goconst
+LINT_LINTERS       += goprintffuncname gosec misspell nolintlint predeclared
+LINT_LINTERS       += promlinter protogetter revive sloglint spancheck unconvert
+LINT_LINTERS       += wastedassign whitespace zerologlint
+LINT_FORMATTERS    = gofmt gofumpt goimports
+LINT_NOTESTS       = dupl goconst
 LINT_URL           = https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh
 
 # CI-linked variables; these set up read-only behavior within a CI
@@ -62,10 +62,12 @@ LINT_URL           = https://raw.githubusercontent.com/golangci/golangci-lint/ma
 ifeq ($(CI),true)
 MOD_ARG            = -mod=readonly
 FIX_ARG            = --modules-download-mode=readonly
+FMT_ARG            = --diff
 COV_ARG            = --readonly
 else
 MOD_ARG            =
 FIX_ARG            = --fix
+FMT_ARG            =
 COV_ARG            =
 endif
 
@@ -91,6 +93,7 @@ JUNIT_OUT          = $(call SIMPPATH,$(GO_TEST_ARTIFACTS)/$(CJUNIT_OUT))
 # Collect the sources and test data files for dependencies; this also
 # collects the list of sources that are not test files for detecting
 # binaries and plugins to build
+GO_MOD             = ./go.mod ./go.sum
 SOURCES            = $(shell find . -name \*.go -print)
 SRC_ONLY           = $(filter-out %_test.go,$(SOURCES))
 TEST_DATA          = $(shell find . -path '*/testdata/*' -type f -print)
@@ -123,10 +126,10 @@ CPLUGS             = $(foreach plug,$(PLUGSRC),$(call BINNAME,$(plug)).$(PLUG_EX
 PLUGS              = $(foreach plug,$(PLUGSRC),$(call FULLBINNAME,$(plug)).$(PLUG_EXT))
 
 # Files to be cleaned up on "make clean"
-CLEAN              = $(BINS) $(PLUGS) $(COVER_OUT) $(COVER_HTML) $(COVER_XML) $(JUNIT_OUT) $(IGNORE).tmp $(TOOLDIR)
+CLEAN              = $(BINS) $(PLUGS) $(COVER_OUT) $(COVER_HTML) $(COVER_XML) $(JUNIT_OUT) $(IGNORE).tmp $(LINT_CONF).tmp $(TOOLDIR)
 
 # Files to be ignored by git
-IGNORE_FILES       = $(addprefix /,$(CBINS) $(CPLUGS) $(CCOVER_OUT) $(CCOVER_HTML) $(CCOVER_XML) $(CJUNIT_OUT) $(IGNORE).tmp $(TOOLDIR))
+IGNORE_FILES       = $(addprefix /,$(CBINS) $(CPLUGS) $(CCOVER_OUT) $(CCOVER_HTML) $(CCOVER_XML) $(CJUNIT_OUT) $(IGNORE).tmp $(LINT_CONF).tmp $(TOOLDIR))
 
 # Compute the dependencies for the "all" and "build" targets
 ALL_TARG           = $(IGNORE) test
@@ -157,8 +160,8 @@ build-plugins: $(PLUGS) ## Build plugins (if any)
 tidy: ## Ensure go.mod matches the source code
 	$(GO) mod tidy
 
-imports: $(GOIMPORTS) ## Maintain the source imports
-	$(GOIMPORTS) -l -local $(PKG_ROOT) -w $(SOURCES)
+format: $(GOLANGCI_LINT) $(LINT_CONF) ## Reformat source files
+	$(GOLANGCI_LINT) fmt -c $(LINT_CONF) $(FMT_ARG) $(FORMAT_ARGS) $(PACKAGES)
 
 lint: $(GOLANGCI_LINT) $(LINT_CONF) ## Lint-check source files; may fix some lint issues
 	$(GOLANGCI_LINT) run -c $(LINT_CONF) $(FIX_ARG) $(LINT_ARGS) $(PACKAGES)
@@ -178,23 +181,80 @@ cover-test: $(COVER_OUT) $(OVERCOVER) ## Test that coverage meets minimum config
 clean: ## Clean up intermediate files
 	rm -rf $(CLEAN)
 
-$(LINT_CONF):
-	@echo "linters:" >> $(LINT_CONF); \
-	echo "  enable:" >> $(LINT_CONF); \
-	for linter in $(LINT_ENABLE); do \
-		echo "  - $${linter}" >> $(LINT_CONF); \
-	done; \
-	echo "severity:" >> $(LINT_CONF); \
-	echo "  default-severity: blocker" >> $(LINT_CONF); \
-	echo "linters-settings:" >> $(LINT_CONF); \
-	echo "  goconst:" >> $(LINT_CONF); \
-	echo "    ignore-tests: true" >> $(LINT_CONF); \
-	echo "  gofumpt:" >> $(LINT_CONF); \
-	echo "    module-path: $(PKG_ROOT)" >> $(LINT_CONF); \
-	echo "  goimports:" >> $(LINT_CONF); \
-	echo "    local-prefixes: $(PKG_ROOT)" >> $(LINT_CONF)
+list-updates: ## List direct dependencies that are not up to date
+	@$(GO) list -m -u -f '{{if and (not .Indirect) (not .Main) .Update}}{{.}}{{end}}' all
 
-$(COVER_OUT): $(SOURCES) $(TEST_DATA)
+update: ## Check for available direct dependency updates and apply them
+	for mod in $$($(GO) list -m -u -f '{{if and (not .Indirect) (not .Main) .Update}}{{.Path}}{{end}}' all); do \
+		$(GO) get -u $${mod}; \
+	done; \
+	$(GO) mod tidy
+
+$(LINT_CONF).tmp: $(MAKEFILE_LIST)
+	@echo "Generating $(LINT_CONF).tmp"
+	@echo 'version: "2"' > $(LINT_CONF).tmp; \
+	echo "linters:" >> $(LINT_CONF).tmp; \
+	echo "  enable:" >> $(LINT_CONF).tmp; \
+	for linter in $(LINT_LINTERS); do \
+		echo "  - $${linter}" >> $(LINT_CONF).tmp; \
+	done; \
+	echo "  exclusions:" >> $(LINT_CONF).tmp; \
+	echo "    generated: lax" >> $(LINT_CONF).tmp; \
+	echo "    presets:" >> $(LINT_CONF).tmp; \
+	echo "    - comments" >> $(LINT_CONF).tmp; \
+	echo "    - common-false-positives" >> $(LINT_CONF).tmp; \
+	echo "    - legacy" >> $(LINT_CONF).tmp; \
+	echo "    - std-error-handling" >> $(LINT_CONF).tmp; \
+	echo "    rules:" >> $(LINT_CONF).tmp; \
+	echo "    - linters:" >> $(LINT_CONF).tmp; \
+	for linter in $(LINT_NOTESTS); do \
+		echo "      - $${linter}" >> $(LINT_CONF).tmp; \
+	done; \
+	echo '      path: (.+)_test\.go' >> $(LINT_CONF).tmp; \
+	echo "    paths:" >> $(LINT_CONF).tmp; \
+	echo "    - third_party$$" >> $(LINT_CONF).tmp; \
+	echo "    - builtin$$" >> $(LINT_CONF).tmp; \
+	echo "    - examples$$" >> $(LINT_CONF).tmp; \
+	echo "severity:" >> $(LINT_CONF).tmp; \
+	echo "  default: blocker" >> $(LINT_CONF).tmp; \
+	echo "formatters:" >> $(LINT_CONF).tmp; \
+	echo "  enable:" >> $(LINT_CONF).tmp; \
+	for formatter in $(LINT_FORMATTERS); do \
+		echo "  - $${formatter}" >> $(LINT_CONF).tmp; \
+	done; \
+	echo "  settings:" >> $(LINT_CONF).tmp; \
+	echo "    gofumpt:" >> $(LINT_CONF).tmp; \
+	echo "      module-path: $(PKG_ROOT)" >> $(LINT_CONF).tmp; \
+	echo "    goimports:" >> $(LINT_CONF).tmp; \
+	echo "      local-prefixes:" >> $(LINT_CONF).tmp; \
+	echo "      - $(PKG_ROOT)" >> $(LINT_CONF).tmp; \
+	echo "  exclusions:" >> $(LINT_CONF).tmp; \
+	echo "    generated: lax" >> $(LINT_CONF).tmp; \
+	echo "    paths:" >> $(LINT_CONF).tmp; \
+	echo "    - third_party$$" >> $(LINT_CONF).tmp; \
+	echo "    - builtin$$" >> $(LINT_CONF).tmp; \
+	echo "    - examples$$" >> $(LINT_CONF).tmp; \
+	echo "output:" >> $(LINT_CONF).tmp; \
+	echo "  formats:" >> $(LINT_CONF).tmp; \
+	echo "    text:" >> $(LINT_CONF).tmp; \
+	echo "      path: stdout" >> $(LINT_CONF).tmp; \
+	echo "      print-issued-lines: false" >> $(LINT_CONF).tmp; \
+	echo "      colors: true" >> $(LINT_CONF).tmp
+
+$(LINT_CONF): $(LINT_CONF).tmp
+ifeq ($(CI),true)
+	@if cmp $(LINT_CONF) $(LINT_CONF).tmp >/dev/null 2>&1; then \
+		:; \
+	else \
+		echo "The $(LINT_CONF) file requires regeneration."; \
+		echo "Use \"make $(LINT_CONF)\" to regenerate it."; \
+		exit 1; \
+	fi
+else
+	cp $(LINT_CONF).tmp $(LINT_CONF)
+endif
+
+$(COVER_OUT): $(GO_MOD) $(SOURCES) $(TEST_DATA)
 	$(MAKE) test-only
 
 $(COVER_HTML): $(COVER_OUT)
@@ -205,7 +265,7 @@ $(COVER_XML): $(COBERTURA) $(COVER_OUT)
 
 # Sets up build targets for each binary
 ifneq ($(BINS),)
-$(BINS): $(SOURCES)
+$(BINS): $(GO_MOD) $(SOURCES)
 
 define BIN_template =
 $$(call FULLBINNAME,$(1)):
@@ -217,7 +277,7 @@ endif
 
 # Sets up build targets for each plugin
 ifneq ($(PLUGS),)
-$(PLUGS): $(SOURCES)
+$(PLUGS): $(GO_MOD) $(SOURCES)
 
 define PLUG_template =
 $$(call FULLBINNAME,$(1)).so:
@@ -310,6 +370,7 @@ debug: # Emit debugging information; target hidden from help
 	@echo "  COVER_HTML: $(COVER_HTML)"
 	@echo "   COVER_XML: $(COVER_XML)"
 	@echo "   JUNIT_OUT: $(JUNIT_OUT)"
+	@echo "      GO_MOD: $(GO_MOD)"
 	@echo "     SOURCES: $(SOURCES)"
 	@echo "    SRC_ONLY: $(SRC_ONLY)"
 	@echo "   TEST_DATA: $(TEST_DATA)"
@@ -326,4 +387,4 @@ debug: # Emit debugging information; target hidden from help
 	@echo "  BUILD_TARG: $(BUILD_TARG)"
 	@echo "   TEST_TARG: $(TEST_TARG)"
 
-.PHONY: all build build-bins build-plugins tidy imports lint test-only test cover cover-report cover-test clean help debug
+.PHONY: all build build-bins build-plugins clean cover cover-report cover-test format help lint list-updates test test-only tidy update debug
