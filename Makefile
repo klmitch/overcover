@@ -55,7 +55,7 @@ LINT_LINTERS       += promlinter protogetter revive sloglint spancheck unconvert
 LINT_LINTERS       += wastedassign whitespace zerologlint
 LINT_FORMATTERS    = gofmt gofumpt goimports
 LINT_NOTESTS       = dupl goconst
-LINT_URL           = https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh
+LINT_URL           = https://golangci-lint.run/install.sh
 
 # CI-linked variables; these set up read-only behavior within a CI
 # system
